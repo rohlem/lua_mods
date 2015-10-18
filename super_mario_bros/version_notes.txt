@@ -1,0 +1,22 @@
+00 - 1985 - Original Nintendo Entertainment System release (US/Japan)
+01 - 1985 - Ported into the American arcade machine Nintendo PlayChoice-10.
+02 - 1986 - Re-released on the Famicom Disk System in Japan.
+03 - 1986 - Released as a Game & Watch title.
+04 - 1986 - Released in arcades as Vs. Super Mario Bros..
+05 - 1986 - Released on the Famicom Disk System as All Night Nippon Super Mario Bros..
+06 - 1988 - Re-released on the NES in the US as part of the 2-in-1 Super Mario Bros./Duck Hunt compilation, packaged with the NES Action Set.
+07 - 1988 - Re-released on the NES in Europe as part of the Super Mario Bros./Tetris/Nintendo World Cup compilation, sold alone or with the Top Loader.
+08 - 1990 - Re-released on the NES in the US as part of the 3-in-1 Super Mario Bros./Duck Hunt/World Class Track Meet compilation, packaged with the NES Power Set.
+09 - 1990 - Re-released on the NES as part of Nintendo World Championships 1990.
+10 - 1993 - Remake available on the Super Nintendo Entertainment System as part of the Super Mario All-Stars compilation (known as Super Mario Collection in Japan). Graphics and sound were updated, and many glitches were removed.
+11 - 1994 - Remake available on the SNES in the US as part of the Super Mario All-Stars + Super Mario World compilation, packaged with the SNES Mario Set.
+12 - 1999 - Remake released on the Game Boy Color as Super Mario Bros. Deluxe. The game featured the original game's graphics but loads of additional content.
+13 - 2002 - The original game is available as an unlockable NES game in Animal Crossing. However, it can currently only be unlocked using a cheating device.
+14 - 2004 - The original game was re-released on the Game Boy Advance as part of the NES Classics / Famicom Mini collection, celebrating 20 years of the Famicom in Japan. It was also re-released on September 13, 2005 in Japan to celebrate 20 years of the original NES game.
+15 - 2006 - Available on the Wii as part of the Virtual Console.
+16 - 2008 - Available in Super Smash Bros. Brawl as a playable demo.
+17 - 2010 - Remake released with Super Mario All-Stars Limited Edition.
+18 - 2010 - Virtual Console remake with the question marks on the ? Blocks replaced with "25", exclusively bundled with a special, red Wii.
+19 - 2011 - Released on the 3DS as part of the Virtual Console. It is a free download for those who purchased a 3DS prior to the August 12th price drop. The full release version was released on January 5, 2012 in Japan, on February 16, 2012 in North America and on March 1, 2012 in Europe and Australia.
+20 - 2013 - Released on the Wii U as part of the Virtual Console service via the Wii U eShop in Japan on June 5 and in Europe, Australia and North America on September. The game was also featured in NES Remix.
+21 - 2014 - Re-released in NES Remix 2 as Super Luigi Bros. The game was also featured in Ultimate NES Remix along with the port of Super Mario Bros., Speed Mario Bros.

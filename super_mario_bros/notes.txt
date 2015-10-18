@@ -1,0 +1,28 @@
+0x0499 [Ducking Logic]
+0 - standing
+1 - small
+2 - ducked
+
+0x0756 [Powerup Logic]
+0 - small
+1 - super
+2 - fire
+
+@0x0754 [Small Logic]
+Jumping against blocks
+00 | 0 - big (presumably small broken)
+01 | 1 - small
+02 | 2 - small broken
+03 | 3 - small
+04 | >= 4: n%2 ? small : small broken
+14 | >= 20: n%2 ? small broken : small
+73 | >= 115: n%2 ? small : small broken
+75 | >= 117: small broken
+77 | >= 119: n%2 ? small : small broken
+7A | >= 122: n%2 ? small broken : small
+7F | >= 127: n%2 ? small : small broken
+82 | >= 130: n%2 ? small broken : small
+94 | >= 148: n%2 ? small : small broken
+(?...?)
+F4 | < 244(, >= 230): n%4==3 ? small : small broken
+F4 | 244 - small
