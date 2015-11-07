@@ -34,7 +34,7 @@
   --local since_5_3_jit = since_5_3 or isjit
 --]] version shortcuts
 
---note: throughout this list "support" indicates presence of an argument/feature, whereas "accepts" indicates support of a specific value of an argument
+--note: throughout this list "support" indicates presence of an argument/feature, whereas "accepts" indicates support for a specific argument's value
 return {
   --version information [[
     is_luajit = isjit,
