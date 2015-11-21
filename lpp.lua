@@ -11,7 +11,7 @@
   
   local pairs = pairs
   
-  local print = print
+--  local print = print
   
   local string = string
   local string_find = string.find
@@ -110,7 +110,7 @@ local function prep_compat(contents)
     local current_mode = mode[layer]
     local start_index, char_index, char = string_find(contents, find_masks[current_mode][layer_mode], last_index)
   if not start_index then break end
-    print("AT ", start_index, "-", char_index, ": ", char)
+--    print("AT ", start_index, "-", char_index, ": ", char)
     if char == "\\" then
       if current_mode == 'quote string' or current_mode == 'apostrophe string' then
         last_index = char_index + 2 --as long as no special characters may appear (and should be ignored) within escapes, we should be all good
@@ -120,7 +120,7 @@ local function prep_compat(contents)
     else
       local next_index = char_index + 1
       if (current_mode == 'quote string' and char == "\"") or (current_mode == 'apostrophe string' and char == "'") then
-        print("closing string!")
+--        print("closing string!")
         mode[layer] = 'default'
         last_index = next_index
       else
@@ -139,7 +139,7 @@ local function prep_compat(contents)
               force_write_flag = true --flush to omit "#"
             else
               layer_mode, layer = 'line 1', 1
-              print("switching layer: line 1 | 1 ")
+--              print("switching layer: line 1 | 1 ")
               chunk[next_chunk_index+2] = "_npi_=_npi_+1 "
               next_chunk_index = next_chunk_index + 3
               force_write_flag = true
@@ -149,7 +149,7 @@ local function prep_compat(contents)
             char_index = char_index + 1 --include \n when writing
             next_chunk_index = next_chunk_index + 1
             layer_mode, layer = '2', 2
-            print("switching layer: 2")
+--            print("switching layer: 2")
             force_write_flag = true
           end
           last_index = next_index
@@ -157,7 +157,7 @@ local function prep_compat(contents)
           warn(layer == 2, "dollar sign encountered within layer-1 code")
           local start_index
           start_index, l1_inline_end = string_find(contents, "^%b()", next_index)
-          print("l1 inline expression from", start_index, "to", l1_inline_end)
+--          print("l1 inline expression from", start_index, "to", l1_inline_end)
           if start_index then --layer-1 code
             local excl_index = start_index+1
             local str_sub = string_sub(contents, excl_index, excl_index)
@@ -171,14 +171,14 @@ local function prep_compat(contents)
             end
             next_chunk_index = next_chunk_index + 3
             layer_mode, layer = 'inline 1', 1
-            print("switching layer: inline 1 | 1")
+--            print("switching layer: inline 1 | 1")
             force_write_flag = true
           else
             warn(current_mode ~= 'default', "dollar sign not followed by parentheses in mode default")
             last_index = next_index
           end
         elseif char == ")" then
-          print("char_index", char_index, "l1_inline_end", l1_inline_end)
+--          print("char_index", char_index, "l1_inline_end", l1_inline_end)
           if char_index == l1_inline_end then
             warn(layer == 1, "l1_inline_end reached within layer-2 code")
             start_index = start_index + 1
@@ -190,7 +190,7 @@ local function prep_compat(contents)
               next_chunk_index = next_chunk_index + 1
             end
             layer_mode, layer = '2', 2
-            print("switching layer: 2")
+--            print("switching layer: 2")
             force_write_flag = true
           end
           last_index = next_index
@@ -222,7 +222,7 @@ local function prep_compat(contents)
             local lsei = long_string_end_indicator[1]
             long_string_end_table[2] = lsei
             if string_find(contents, table_concat(long_string_end_table), next_index) then
-              print("====IN====")
+--              print("====IN====")
               char_index = next_index + string_len(lsei)
               last_index = char_index
               chunk[next_chunk_index+2] = "_npi_=_npi_+1"
@@ -234,7 +234,7 @@ local function prep_compat(contents)
           end
         else
           mode[layer] = (char == "\"" and 'quote string') or (char == "'" and 'apostrophe string') or warn(false, "triggered by non-useful symbol", char)
-          print("opening string!")
+--          print("opening string!")
           last_index = next_index
         end
         if parsed_long_string_flag then
@@ -243,7 +243,7 @@ local function prep_compat(contents)
             parsed_long_string_flag = false
         end
         if force_write_flag then
-          print("around line ", line_nr, " forced write of ", begin_index, " to ", char_index - 1, " at layer ", previous_layer)
+--          print("around line ", line_nr, " forced write of ", begin_index, " to ", char_index - 1, " at layer ", previous_layer)
           write[previous_layer](previous_chunk_index, begin_index, char_index - 1)
           begin_index = last_index
           force_write_flag = false
@@ -344,7 +344,7 @@ local function prep(contents)
     local current_mode = mode[layer]
     local start_index, char_index, char = string_find(contents, find_masks[current_mode][layer_mode], last_index)
   if not start_index then break end
-    print("AT ", start_index, "-", char_index, ": ", char)
+--    print("AT ", start_index, "-", char_index, ": ", char)
     if char == "\\" then
       if current_mode == 'quote string' or current_mode == 'apostrophe string' then
         last_index = char_index + 2 --as long as no special characters may appear (and should be ignored) within escapes, we should be all good
@@ -354,7 +354,7 @@ local function prep(contents)
     else
       local next_index = char_index + 1
       if (current_mode == 'quote string' and char == "\"") or (current_mode == 'apostrophe string' and char == "'") then
-        print("closing string!")
+--        print("closing string!")
         mode[layer] = 'default'
         last_index = next_index
       else
@@ -374,7 +374,7 @@ local function prep(contents)
               $(force_write) --flush to omit "#"
             else
               layer_mode, layer = 'line 1', 1
-              print("switching layer: line 1 | 1 ")
+--              print("switching layer: line 1 | 1 ")
               chunk[next_chunk_index+2] = "_npi_=_npi_+1 "
               next_chunk_index = next_chunk_index + 3
               $(force_write)
@@ -385,7 +385,7 @@ local function prep(contents)
             char_index = char_index + 1 --include \n when writing
             next_chunk_index = next_chunk_index + 1
             layer_mode, layer = '2', 2
-            print("switching layer: 2")
+--            print("switching layer: 2")
             $(force_write)
           end
           last_index = next_index
@@ -393,7 +393,7 @@ local function prep(contents)
           warn(layer == 2, "dollar sign encountered within layer-1 code")
           local start_index
           start_index, l1_inline_end = string_find(contents, "^%b()", next_index)
-          print("l1 inline expression from", start_index, "to", l1_inline_end)
+--          print("l1 inline expression from", start_index, "to", l1_inline_end)
           if start_index then --layer-1 code
             local excl_index = start_index+1
             local str_sub = string_sub(contents, excl_index, excl_index)
@@ -407,14 +407,14 @@ local function prep(contents)
             end
             next_chunk_index = next_chunk_index + 3
             layer_mode, layer = 'inline 1', 1
-            print("switching layer: inline 1 | 1")
+--            print("switching layer: inline 1 | 1")
             $(force_write)
           else
             warn(current_mode ~= 'default', "dollar sign not followed by parentheses in mode default")
             last_index = next_index
           end
         elseif char == ")" then
-          print("char_index", char_index, "l1_inline_end", l1_inline_end)
+--          print("char_index", char_index, "l1_inline_end", l1_inline_end)
           last_index = next_index
           if char_index == l1_inline_end then
             warn(layer == 1, "l1_inline_end reached within layer-2 code")
@@ -427,7 +427,7 @@ local function prep(contents)
               next_chunk_index = next_chunk_index + 1
             end
             layer_mode, layer = '2', 2
-            print("switching layer: 2")
+--            print("switching layer: 2")
             $(force_write)
           end
         elseif char == "-" then
@@ -458,7 +458,7 @@ local function prep(contents)
             local lsei = long_string_end_indicator[1]
             long_string_end_table[2] = lsei
             if string_find(contents, table_concat(long_string_end_table), next_index) then
-              print("====IN====")
+--              print("====IN====")
               char_index = next_index + string_len(lsei)
               last_index = char_index
               chunk[next_chunk_index+2] = "_npi_=_npi_+1"
@@ -470,7 +470,7 @@ local function prep(contents)
           end
         else
           mode[layer] = (char == "\"" and 'quote string') or (char == "'" and 'apostrophe string') or warn(false, "triggered by non-useful symbol", char)
-          print("opening string!")
+--          print("opening string!")
           last_index = next_index
         end
         if parsed_long_string_flag then
@@ -481,7 +481,7 @@ local function prep(contents)
         $(use_goto and [[goto no_write
         ::force_write::]] or [[if force_write_flag then
           force_write_flag = false]])
-          print("around line ", line_nr, " forced write of ", begin_index, " to ", char_index - 1, " at layer ", previous_layer)
+--          print("around line ", line_nr, " forced write of ", begin_index, " to ", char_index - 1, " at layer ", previous_layer)
           write[previous_layer](previous_chunk_index, begin_index, char_index - 1)
           begin_index = last_index
         $(use_goto and "::no_write::" or "end")
