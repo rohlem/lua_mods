@@ -1,5 +1,6 @@
 --pretty-prints the contents of a table and its elements recursively
 --automatically pretty-prints (require "lua_version") and _G, by default
+--NOTE: sets are currently only semi-useful; the goal was originally to have one set per stack and traverse them top-to-bottom for every comparison.
 
 --"imports" [[
   local _LOADED = _LOADED
@@ -67,7 +68,7 @@ end
 local function start_rec(t, name, set, set_size, stack, stack_size)
   stack, stack_size, set, set_size = stack or {}, stack_size or 0, set or {}, set_size or 0
   print("===", name, "===")
-  table_rec(name, t, stack, stack_size, set, set_size, string_rep(" ", stack_size+1))
+  table_rec(name, t, stack, stack_size, set, set_size, string_rep(" ", stack_size))
 end
 
 start_rec(lua_version, "lua_version", {_LOADED or package_loaded, _LOADED and "_LOADED" or package_loaded and "package.loaded"}, 1)
