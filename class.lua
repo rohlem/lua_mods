@@ -1,5 +1,7 @@
-local getmetatable = getmetatable
-local setmetatable = setmetatable
+--"imports" [[
+  local getmetatable = getmetatable
+  local setmetatable = setmetatable
+--]] "imports"
 
 local function first_new(self, obj)
   self.mt = {__index = self}
