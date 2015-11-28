@@ -71,7 +71,7 @@ local function start_rec(t, name, set, set_size, stack, stack_size)
   table_rec(name, t, stack, stack_size, set, set_size, string_rep(" ", stack_size))
 end
 
-start_rec(lua_version, "lua_version", {_LOADED or package_loaded, _LOADED and "_LOADED" or package_loaded and "package.loaded"}, 1)
-start_rec(_G, "_G", {lua_version, "lua_version"}, 1)
+--start_rec(lua_version, "lua_version", {_LOADED or package_loaded, _LOADED and "_LOADED" or package_loaded and "package.loaded"}, 1)
+--start_rec(_G, "_G", {lua_version, "lua_version"}, 1)
 
 return start_rec
