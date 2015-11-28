@@ -1,29 +1,42 @@
-require "NES.base"
-require "system.memory"
+--"imports" [[
+  local require = require
+  
+  local nes = require "NES.base"
+  
+  local system_memory = require "system.memory"
+--]] "imports"
 
-local nes_memory = {lower_bound = 0x0000, upper_bound = 0xFFFF}
-nes.memory = nes_memory
-setmetatable(nes_memory, {__index = memory})
+--integration [[
+  local nes_memory = {lower_bound = 0x0000, upper_bound = 0xFFFF}
+  nes.memory = nes_memory
+--]] integration
 
-local memory_region = system.memory.memory_region
-nes_memory.ram =                    memory_region:new({lower_bound = 0x0000, upper_bound = 0x07FF})
-nes_memory.zero_page =              memory_region:new({lower_bound = 0x0000, upper_bound = 0x00FF})
-nes_memory.stack =                  memory_region:new({lower_bound = 0x0100, upper_bound = 0x01FF})
-nes_memory.high_ram =               memory_region:new({lower_bound = 0x0200, upper_bound = 0x07FF})
-nes_memory.low_mirror_a =           memory_region:new({lower_bound = 0x0800, upper_bound = 0x0FFF})
-nes_memory.low_mirror_b =           memory_region:new({lower_bound = 0x1000, upper_bound = 0x17FF})
-nes_memory.low_mirror_c =           memory_region:new({lower_bound = 0x1800, upper_bound = 0x1FFF})
-nes_memory.io_regs_a =              memory_region:new({lower_bound = 0x2000, upper_bound = 0x2007})
-nes_memory.io_regs_a_mirror =       memory_region:new({lower_bound = 0x2008, upper_bound = 0x3FFF})
-nes_memory.io_regs_b =              memory_region:new({lower_bound = 0x4000, upper_bound = 0x401F})
-nes_memory.expansion_rom =          memory_region:new({lower_bound = 0x4020, upper_bound = 0x5FFF})
-nes_memory.sram =                   memory_region:new({lower_bound = 0x6000, upper_bound = 0x7FFF})
-nes_memory.prg_rom =                memory_region:new({lower_bound = 0x8000, upper_bound = 0xFFFF})
-nes_memory.nmi_handler =            memory_region:new({lower_bound = 0xFFFA, upper_bound = 0xFFFB})
-nes_memory.power_on_reset_handler = memory_region:new({lower_bound = 0xFFFC, upper_bound = 0xFFFD})
-nes_memory.brk_handler =            memory_region:new({lower_bound = 0xFFFE, upper_bound = 0xFFFF})
+--setup [[
+  setmetatable(nes_memory, {__index = memory})
 
---has yet to prove useful
+  local memory_region = system_memory.memory_region
+  nes_memory.ram                    = memory_region:new({lower_bound = 0x0000, upper_bound = 0x07FF})
+  nes_memory.zero_page              = memory_region:new({lower_bound = 0x0000, upper_bound = 0x00FF})
+  nes_memory.stack                  = memory_region:new({lower_bound = 0x0100, upper_bound = 0x01FF})
+  nes_memory.high_ram               = memory_region:new({lower_bound = 0x0200, upper_bound = 0x07FF})
+  nes_memory.low_mirror_a           = memory_region:new({lower_bound = 0x0800, upper_bound = 0x0FFF})
+  nes_memory.low_mirror_b           = memory_region:new({lower_bound = 0x1000, upper_bound = 0x17FF})
+  nes_memory.low_mirror_c           = memory_region:new({lower_bound = 0x1800, upper_bound = 0x1FFF})
+  nes_memory.io_regs_a              = memory_region:new({lower_bound = 0x2000, upper_bound = 0x2007})
+  nes_memory.io_regs_a_mirror       = memory_region:new({lower_bound = 0x2008, upper_bound = 0x3FFF})
+  nes_memory.io_regs_b              = memory_region:new({lower_bound = 0x4000, upper_bound = 0x401F})
+  nes_memory.expansion_rom          = memory_region:new({lower_bound = 0x4020, upper_bound = 0x5FFF})
+  nes_memory.sram                   = memory_region:new({lower_bound = 0x6000, upper_bound = 0x7FFF})
+  nes_memory.prg_rom                = memory_region:new({lower_bound = 0x8000, upper_bound = 0xFFFF})
+  nes_memory.nmi_handler            = memory_region:new({lower_bound = 0xFFFA, upper_bound = 0xFFFB})
+  nes_memory.power_on_reset_handler = memory_region:new({lower_bound = 0xFFFC, upper_bound = 0xFFFD})
+  nes_memory.brk_handler            = memory_region:new({lower_bound = 0xFFFE, upper_bound = 0xFFFF})
+--]] setup
+
+return nes_memory
+
+--[[have yet to prove useful
+
 function nes_memory.categorize_address(addr)
 	local candidate = nild
 	local cache = nil
@@ -38,7 +51,6 @@ function nes_memory.categorize_address(addr)
 	return candidate
 end
 
---has yet to prove useful
 function nes_memory.effective_address(addr)
 	if addr >= 0x0000 and addr <= 0x1FFF then
 		return bit.band(addr, 0x7FFF)
@@ -47,3 +59,4 @@ function nes_memory.effective_address(addr)
 	end
 	return addr
 end
+--]]
