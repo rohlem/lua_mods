@@ -244,15 +244,15 @@ return {
     --package [[
       package_loaded = until_5_1 and _LOADED or package.loaded,
       
-      package_searcher_3_discards_version_separator_prefix = until_5_3,
-      package_searcher_3_discards_version_separator_suffix = since_5_3,
-      package_searchers = until_5_2 and package.loaders or package.searchers,
-      package_searchers_also_return_file_name = since_5_2,
-      
       package_loadlib = until_5_1 and loadlib or package.loadlib,
       package_loadlib_accepts_funcname_asterisk = since_5_2_jit,
       
       package_path = until_5_1 and LUA_PATH or package.path,
+      
+      package_searcher_3_discards_version_separator_prefix = until_5_3,
+      package_searcher_3_discards_version_separator_suffix = since_5_3,
+      package_searchers = until_5_2 and package.loaders or package.searchers,
+      package_searchers_also_return_file_name = since_5_2,
       
       require_calls_package_searchers = since_5_1,
       require_calls_loader_with_second_argument = since_5_2,
