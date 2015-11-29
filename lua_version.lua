@@ -308,7 +308,7 @@ return {
       lua_sa_option_l_accepts_file_name = until_5_1,
       lua_sa_option_l_accepts_module_name = since_5_1,
       lua_sa_supports_option_E = since_5_2,
-    --]] interpreter
+    --]] stand-alone
     
     lua_bytecode_verification = until_5_2, --is this even remotely relevant?
     non_strtod_tonumber = isjit --this refers to the implementation, consequences listed separately within library-basic
