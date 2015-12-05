@@ -84,7 +84,7 @@ return {
       break_anywhere = since_5_2_compat_jit,
       empty_statement_allowed = since_5_2_compat_jit,
       environment_supplied_by_env_upvalue = since_5_2,
-      function_call_argument_list_after_line_break = since_5_2_jit, --not sure whether in plain non-compat jit (but I assume so, since it's a corner case all along)
+      function_call_opening_parenthesis_after_line_break_supported = since_5_2_jit,
       for_first_var_assignment_undefined = until_5_1,
       goto_support = since_5_2_jit,
       label_support = since_5_2_jit,
