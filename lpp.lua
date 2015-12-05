@@ -1,4 +1,3 @@
---TODO Implement two-phase loading, with second phase optimizations
 --EXTENSION replace level long strings in 5.0 (disallowing long strings in layer-2 code, because layer-1 is inescapable)
 --EXTENSION numeric literal syntax
 
@@ -8,6 +7,9 @@
   local error = error
   
   local io = io
+  local io_open = io.open
+  
+  local lua_version = require "lua_version"
   
   local pairs = pairs
   
@@ -253,10 +255,28 @@ local function prep_compat(contents)
   end
   write[layer](next_chunk_index, begin_index, -1)
   chunk[next_chunk_index+layer] = " return require\"lua_version\".loadstring(table.concat(_pr_))"
-  return (require "lua_version").loadstring(table_concat(chunk)), chunk
+  return lua_version.loadstring(table_concat(chunk)), chunk
 end
 
-local lpp_file = io.open("lpp.lua")
+local _, file_name = ...
+local lpp_file = file_name and io_open(file_name)
+if not lpp_file then
+  lpp_file = debug
+  if lpp_file then
+    lpp_file = lpp_file.getinfo(1).source
+    lpp_file = string_sub(lpp_file, 1, 1) == "@" and io_open(string_sub(lpp_file, 2))
+  end
+  if not lpp_file then
+    local string_gsub = string.gsub
+    local paths = string_gsub(package.path, "%?", "lpp")
+    for path in lua_version.string_gmatch(paths, "([^;]+);?") do -- ";;" is currently ignored
+      lpp_file = io_open(path)
+      if lpp_file then
+        break
+      end
+    end
+  end
+end
 local result = prep_compat(lpp_file:read("*a"))()()
 io.close(lpp_file)
 return result
@@ -270,10 +290,8 @@ return result
   local assert = assert
   
   local io_close = io.close
-  local io_open = io.open
   
 # local lua_version = require "lua_version"
-  local lua_version = require "lua_version"
   
   local loadstring = lua_version.loadstring
   
@@ -577,7 +595,7 @@ end
   
   local searcher_function
   
-#if package_searchpath then
+#if not package_searchpath then
   
   function searcher_function(modname)
     modname = string_gsub(modname, "%.", dir_sep)
@@ -592,17 +610,18 @@ end
     fnf_table[2] = paths
     return nil
   end
+  
 #else
+
   function searcher_function(modname)
     local file, err_msg = package_searchpath(modname, prep_path)
     return file and $(package_searcher)
   end
+  
 #end
 
 local package_searchers = lua_version.package_searchers
-if package_searchers then
-  package_searchers[#package_searchers+1] = searcher_function
-end
+package_searchers[#package_searchers+1] = searcher_function
 
 #end
 
@@ -614,7 +633,6 @@ return {
   prep_path = prep_path,
   --preps a file, executes the resulting function and caches and returns its result
   prepquire = prepquire$(!package_searchers and [[,
-  searcher_function = searcher_function]]),
-  sm = sub_mark
+  searcher_function = searcher_function]])
   }
 --]===]
