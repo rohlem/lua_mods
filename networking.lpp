@@ -1,0 +1,460 @@
+--"imports" [[
+  local require = require
+  
+  local class = require "class"
+  
+  local emu = emu
+  local emu_framecount = emu.framecount
+  local emu_message = emu.message
+  
+  local lua_socket = require "socket"
+#local lua_version = require "lua_version"
+  
+  local math_huge = math.huge
+  
+  local pairs = pairs
+  
+  local print = print
+  
+  local string_gmatch = require "lua_version".string_gmatch
+  local string_sub = string.sub
+  
+  local table = table
+  local table_remove = table.remove
+  local table_concat = table.concat
+#local operator_len_support = lua_version.operator_len_support
+  $(!operator_len_support and "local table_len = table.getn")
+#local len = operator_len_support and function(table) return "#"..table end or function(table) return "table_len("..table..")" end
+
+  local tonumber = tonumber
+--]] "imports"
+
+--utility functions [[
+  local function warn(o, msg, ...)
+    if not o then
+      print(msg)
+    end
+    return o, msg, $(lua_version.varargs_identifier_expr)
+  end
+--]] utility functions
+
+--class definition [[
+  local sessions = {}
+  
+  local session = class:new()
+  function session:expire()
+    local clients = self.clients
+    if clients then
+      for i = 1, $(len "clients") do
+        clients[i]:close()
+      end
+    end
+    self.socket:close()
+    self.expired = true
+  end
+  function session:remove()
+    local index = self.index
+    local session_count = $(len "sessions")
+    for i = index, session_count - 1 do
+      local s = sessions[i+1]
+      sessions[i] = s
+      s.index = i
+    end
+    sessions[session_count] = nil
+  end
+  function session:close()
+    self:expire()
+    self:remove()
+  end
+  
+  local function fetch_package_type_group(session, category, package_type)
+    local entries = session[category]
+    local package_type_group
+    if not entries then
+      entries = {}
+      session[category] = entries
+      package_type_group = {}
+      entries[package_type] = package_type_group
+    else
+      package_type_group = entries[package_type]
+      if not package_type_group then
+        package_type_group = {}
+        entries[package_type] = package_type_group
+      end
+    end
+    return package_type_group
+  end
+  local function install_callback_in_group(package_type_group, f, nf)
+    nf = nf or nf == nil and f or nil
+    local pf = package_type_group[f]
+    package_type_group[f] = nil
+    if nf then
+      package_type_group[nf] = nf
+    end
+    return pf
+  end
+  --[[installations' behaviour:
+    if nf == nil then
+      <handler f is installed>
+    else
+      <handler f is removed>
+      if nf ~= false then
+        <handler nf is installed>
+      end
+    end]]
+  
+  function session:install_handler(package_type, f, nf)
+    return install_callback_in_group(fetch_package_type_group(self, "handlers", package_type), f, nf)
+  end
+  function session:install_frame_handler(package_type, f, nf, offset)
+    nf = nf or nf == nil and f or nil
+    local package_type_group = fetch_package_type_group(self, "frame_handlers", package_type)
+    local data = package_type_group[f]
+    package_type_group[f] = nil
+    if nf then
+      data = data or {}
+      data.func = nf
+      data.offset = offset or data.offset or 0
+      package_type_group[nf] = data
+    end
+    return data
+  end
+  function session:install_provider(package_type, f, nf)
+    return install_callback_in_group(fetch_package_type_group(self, "providers", package_type), f, nf)
+  end
+--]] class definition
+
+--class definition [[
+  local client_session = session:new()
+  function client_session:send(...)
+    return self.socket:send($(lua_version.varargs_identifier_expr))
+  end
+  function client_session:receive(...)
+    return self.socket:receive($(lua_version.varargs_identifier_expr))
+  end
+--]] class definition
+
+--class definition [[
+  local host_session = session:new()
+  function host_session:accept(n) --WARNING: currently closes all clients' active connections
+    n = n or 1
+    if n > self.max_con then
+      print("WARNING: tried to accept more clients than the maximum of allowed connections (will be ignored)")
+      return
+    end
+    local clients = self.clients
+    local client_count = $(len "clients")
+    for i = 1, client_count do
+      clients[i]:close()
+    end
+    local socket = self.socket
+    socket:settimeout()
+    local accept = socket.accept
+    local nagle = self.nagle
+    local linger = self.linger
+    for i = 1, n do
+      print("Waiting for client #", i)
+      local client = accept(socket)
+      print("Accepting client #", i)
+      clients[i] = client
+      warn(client:setoption('tcp-nodelay', not nagle))
+      if linger then
+        warn(client:setoption('linger', linger))
+      end
+    end
+  end
+  function host_session:do_broadcast(action, ...)
+    local clients = self.clients
+    if not clients then
+      print("WARNING: tried to broadcast ", action, " without accepting clients first (will be ignored)")
+      return
+    end
+    local n = $(len "clients")
+    if n <= 0 then
+      print("WARNING: tried to broadcast ", action, " with no clients connected (will be ignored)")
+      return
+    end
+    local replies = {}
+    for i = 1, n do
+      local client = clients[i]
+      replies[i] = warn(client[action](client, $(lua_version.varargs_identifier_expr)))
+    end
+    return replies
+  end
+  function host_session:send(...)
+    return self:do_broadcast("send", $(lua_version.varargs_identifier_expr))
+  end
+  function host_session:receive(...)
+    return self:do_broadcast("receive", $(lua_version.varargs_identifier_expr))
+  end
+--]] class definition
+
+--resource finalization [[
+#  local create_session_finalizer = lua_version.finalizers_called_on_tables
+#  if create_session_finalizer then
+    setmetatable(sessions, {__gc = function(sessions)
+        for i = 1, $(len "sessions") do
+          sessions[i]:close()
+        end
+      end})
+#  end
+--]] resource finalization
+
+--factory function [[
+  local function create_session(role, max_con, server_ip_addr, server_port, nagle, linger, client_ip_addr, client_port)
+    if not role then
+      return nil, "no role specified"
+    end
+    
+    if not server_ip_addr then
+      server_ip_addr = "localhost"
+      if role == 'client' then
+        print("WARNING: Client connection defaulted to localhost!")
+      end
+    end
+    
+    server_port = server_port or 0
+    if server_port == 0 then
+      print("WARNING: Server port of 0 specified!")
+    end
+    
+    local socket
+    local session_type
+    
+    local clients
+    
+    if role == 'host' then
+      if client_ip_addr or client_port then
+        print("WARNING: client ip address or client port specified for host (will be ignored)")
+      end
+      socket = assert(lua_socket.bind(server_ip_addr, server_port, max_con))
+      session_type = host_session
+      clients = {}
+    elseif role == 'client' then
+      if max_con then
+        print("WARNING: max_con specified for client connection (will be ignored)")
+      end
+      socket = assert(lua_socket.connect(server_ip_addr, server_port--[[, client_ip_addr, client_port]]))
+      session_type = client_session
+    else
+      return nil, "role not recognized"
+    end
+    
+    warn(socket:setoption('tcp-nodelay', not nagle), "nagle parameter erroneous")
+    if linger then
+      warn(socket:setoption('linger', linger), "linger parameter erroneous")
+    end
+    
+    local s_index = $(len "sessions") + 1
+    local s = session_type:new({
+       index = s_index,
+       role = role,
+       max_con = max_con,
+       socket = socket,
+       clients = clients,
+       server_ip_addr = server_ip_addr,
+       server_port = server_port,
+       nagle = nagle,
+       packages = {independent = {}, leftovers = ""},
+       linger = linger,
+       client_ip_addr = client_ip_addr,
+       client_port = client_port})
+    sessions[s_index] = s
+    return s
+  end
+--]] factory function
+
+--integration [[
+# local goto_support = lua_version.goto_support
+# local repeat_section_begin = goto_support and function(name) return "::"..name.."::" end or function(name) return "local flag_break_"..name.." while not flag_break_"..name.." do" end
+# local repeat_section_break = goto_support and function(name) return "goto after_"..name end or function(name) return "flag_break_"..name.." = true" end
+# local repeat_section_end = goto_support and function(name) return "goto "..name.." ::after_"..name.."::" end or function(name) return "end" end
+  emu.registerbefore(
+   function()
+     local current_frame = emu_framecount()
+--     print("#", current_frame)
+     --receiving [[
+       local expiration_list
+       local session_socket_selection = {}
+       for i = 1, $(len "sessions") do --room for improvement: mark all blocking sockets, then select only over them
+         local s = sessions[i]
+         local socket = s.socket
+         local packages = s.packages
+         local handlers = s.handlers
+         local frame_handlers = s.frame_handlers
+  --       print("receiving frame #", current_frame)
+         local receiving
+         local receive_list = {}
+         local blocking
+         if s.role == 'host' then
+  --         print("skipping receiving data as host")
+           break
+         end
+         $(repeat_section_begin "receive_block")
+           local independent_packages = packages.independent
+           local last_index = 1
+           local leftovers = packages.leftovers
+           if receiving then
+             for k, v in pairs(receive_list) do
+  --             print("receiving ", v)
+             end
+  --           print("LEFTOVERS:", leftovers)
+           end
+           local data
+           if not receiving then
+             data = leftovers
+           else
+             if not blocking then
+               socket:settimeout(0)
+               local _, msg
+               _, msg, data = s:receive("*a")
+               if msg and msg ~= "timeout" then
+                 print(msg)
+               end
+               if data == "" then
+                 expiration_list = expiration_list or {}
+                 expiration_list[$(len "expiration_list")] = s
+               end
+             else
+               session_socket_selection[1] = socket
+               socket:settimeout()
+               lua_socket.select(session_socket_selection)
+               socket:settimeout(0)
+               local _, msg
+               _, msg, data = s:receive("*a")
+               if msg and msg ~= "timeout" then
+                 print(msg)
+               end
+             end
+             data = leftovers .. data
+           end
+--           print("RECEIVED:", data)
+           for frame_number, frame_data, end_index in string_gmatch(data, "(%d*){(.-)};()") do
+           if not end_index then break end
+             last_index = end_index
+             local iterator = string_gmatch(frame_data, "(.-)%((.-)%)")
+             if frame_number == "" then
+               local independent_length = $(len "independent_packages")
+               independent_packages[independent_length+1] = package_group
+               for package_type, package_data in iterator do
+                 local package_type_group = independent_packages[package_type]
+                 if not package_type_group then
+                   package_type_group = {}
+                   independent_packages[package_type] = package_type_group
+                 end
+                 local length = $(len "package_type_group")
+                 package_type_group[length+1] = package_data
+               end
+             else
+               local package_group = {}
+               packages[tonumber(frame_number)] = package_group
+               for package_type, package_data in iterator do
+                 package_group[package_type] = package_data
+               end
+             end
+           end
+           packages.leftovers = string_sub(data, last_index)
+  --         print("LEFTOVERS:", packages.leftovers)
+  --         print("AT HANDLERS")
+           if handlers then
+             for package_type, package_type_group in pairs(handlers) do
+               local independent_typed_packages = independent_packages[package_type]
+               for k, v in pairs(package_type_group) do
+                 for i = 1, $(len "independent_typed_packages") do
+                   v(independent_typed_packages[i])
+                 end
+               end
+             end
+             packages.independent = nil
+           end
+           local still_receiving
+           local min_offset_outer = math_huge
+           if frame_handlers then
+             for package_type, package_type_group in pairs(receiving and receive_list or frame_handlers) do
+               local min_offset = math_huge
+               local package_type_group_required
+               for k, v in pairs(package_type_group) do
+                 local offset = v.offset
+                 if offset < min_offset then
+                   min_offset = offset
+                   min_offset_outer = offset < min_offset_outer and offset or min_offset_outer
+                 end
+                 local frame = current_frame + offset
+                 local package_group = packages[frame]
+                 local package_type_data = package_group and package_group[package_type]
+                 local receive_list_type = receive_list[package_type]
+                 if v.func(package_type_data, frame) then
+                   if not s.expired then
+                     if not receive_list_type then
+                       receive_list_type = {}
+                       receive_list[package_type] = receive_list_type
+                     end
+                     receive_list_type[k] = v
+                     still_receiving = true
+                     package_type_group_required = true
+                   end
+                 elseif receiving then
+                   receive_list_type[k] = nil
+                 end
+               end
+               if not package_type_group_required then
+  --               print("PACKAGE TYPE GROUP NO LONGER REQUIRED: ", package_type)
+                 receive_list[package_type] = nil
+                 packages[current_frame + min_offset][package_type] = nil
+               end
+             end
+             if not still_receiving then
+               packages[current_frame + min_offset_outer] = nil
+               $(repeat_section_break "receive_block")
+             else
+               blocking = receiving
+               receiving = true
+             end
+           end
+         $(repeat_section_end "receive_block")
+       end
+     --]] receiving
+     
+     --sending [[
+       for i = 1, $(len "sessions") do
+         local s = sessions[i]
+         local data = {}
+         local next_data_index = 3
+  --       print("sending")
+         data[1] = current_frame
+         data[2] = "{"
+         s.socket:settimeout()
+         if s.providers then
+           for package_type, package_group in pairs(s.providers) do
+             data[next_data_index] = package_type
+             data[next_data_index+1] = "("
+             next_data_index = next_data_index + 2
+             for k, v in pairs(package_group) do
+               data[next_data_index] = v()
+               data[next_data_index+1] = ","
+               next_data_index = next_data_index + 2
+             end
+             data[next_data_index-1] = ")"
+           end
+           if next_data_index ~= 3 then
+             data[next_data_index] = "};"
+             data = table_concat(data)
+--             print("DATA SENT:", data)
+             if not warn(s:send(data)) then
+               expiration_list = expiration_list or {}
+               expiration_list[$(len "expiration_list")] = s
+             end
+           end
+         end
+       end
+     --]] sending
+     if expiration_list then
+       for i = 1, $(len "expiration_list") do
+         expiration_list[i]:expire()
+       end
+     end
+   end
+  )
+--]] integration
+
+return create_session
