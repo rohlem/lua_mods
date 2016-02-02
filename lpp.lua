@@ -163,13 +163,13 @@ local function prep_compat(contents)
           if start_index then --layer-1 code
             local excl_index = start_index+1
             local str_sub = string_sub(contents, excl_index, excl_index)
-            l1_inline_type = str_sub == "!" and 'omissible' or str_sub == "?" and 'omissible boolean-aware'
+            l1_inline_type = str_sub ~= "!" and 'omissible'
             if l1_inline_type then --some form of omissible
               chunk[next_chunk_index+2] = "_npi_=_npi_+1 _=("
-              last_index = start_index + 2
+              last_index = start_index + 1
             else
               chunk[next_chunk_index+2] = "_npi_=_npi_+2 _pr_[_npi_-1]="
-              last_index = start_index + 1
+              last_index = start_index + 2
             end
             next_chunk_index = next_chunk_index + 3
             layer_mode, layer = 'inline 1', 1
@@ -186,7 +186,7 @@ local function prep_compat(contents)
             start_index = start_index + 1
             if l1_inline_type then --some form of omissible
               start_index = start_index + 1
-              chunk[next_chunk_index+1] = l1_inline_type == 'omissible' and ")if _ then _pr_[_npi_]=_ _npi_=_npi_+1 end " or ")if _~=nil then _pr_[_npi_]=_ _npi_=_npi_+1 end "
+              chunk[next_chunk_index+1] = ")if _ then _pr_[_npi_]=_ _npi_=_npi_+1 end "
               next_chunk_index = next_chunk_index + 2
             else --non-omissible
               next_chunk_index = next_chunk_index + 1
@@ -386,25 +386,25 @@ local function prep(contents)
             warn(layer_mode ~= 'inline l1', "line l1 starting # encountered within inline l1")
             char_index = char_index + 1 --include \n when writing
             next_index = next_index + 1
-            $(!use_goto and "last_index = next_index") --skipped if goto is used
+            $(use_goto and "last_index = next_index") --skipped if goto is used
             if layer == 1 then
               next_chunk_index = next_chunk_index + 1
-              $(force_write) --flush to omit "#"
+              $(!force_write) --flush to omit "#"
             else
               layer_mode, layer = 'line 1', 1
 --              print("switching layer: line 1 | 1 ")
               chunk[next_chunk_index+2] = "_npi_=_npi_+1 "
               next_chunk_index = next_chunk_index + 3
-              $(force_write)
+              $(!force_write)
             end
           elseif layer_mode == 'line 1' then
             warn(layer == 1, "layer_mode = 'line 1', but layer ~= 1")
-            $(!use_goto and "last_index = next_index") --skipped if goto is used
+            $(use_goto and "last_index = next_index") --skipped if goto is used
             char_index = char_index + 1 --include \n when writing
             next_chunk_index = next_chunk_index + 1
             layer_mode, layer = '2', 2
 --            print("switching layer: 2")
-            $(force_write)
+            $(!force_write)
           end
           last_index = next_index
         elseif char == "$" then
@@ -415,18 +415,18 @@ local function prep(contents)
           if start_index then --layer-1 code
             local excl_index = start_index+1
             local str_sub = string_sub(contents, excl_index, excl_index)
-            l1_inline_type = str_sub == "!" and 'omissible' or str_sub == "?" and 'omissible boolean-aware'
+            l1_inline_type = str_sub ~= "!" and 'omissible'
             if l1_inline_type then --some form of omissible
               chunk[next_chunk_index+2] = "_npi_=_npi_+1 _=("
-              last_index = start_index + 2
+              last_index = start_index + 1
             else
               chunk[next_chunk_index+2] = "_npi_=_npi_+2 _pr_[_npi_-1]="
-              last_index = start_index + 1
+              last_index = start_index + 2
             end
             next_chunk_index = next_chunk_index + 3
             layer_mode, layer = 'inline 1', 1
 --            print("switching layer: inline 1 | 1")
-            $(force_write)
+            $(!force_write)
           else
             warn(current_mode ~= 'default', "dollar sign not followed by parentheses in mode default")
             last_index = next_index
@@ -439,14 +439,14 @@ local function prep(contents)
             start_index = start_index + 1
             if l1_inline_type then --some form of omissible
               start_index = start_index + 1
-              chunk[next_chunk_index+1] = l1_inline_type == 'omissible' and ")if _ then _pr_[_npi_]=_ _npi_=_npi_+1 end " or ")if _~=nil then _pr_[_npi_]=_ _npi_=_npi_+1 end "
+              chunk[next_chunk_index+1] = ")if _ then _pr_[_npi_]=_ _npi_=_npi_+1 end "
               next_chunk_index = next_chunk_index + 2
             else --non-omissible
               next_chunk_index = next_chunk_index + 1
             end
             layer_mode, layer = '2', 2
 --            print("switching layer: 2")
-            $(force_write)
+            $(!force_write)
           end
         elseif char == "-" then
           warn(current_mode == 'default', "- encountered in non-default mode")
@@ -481,7 +481,7 @@ local function prep(contents)
               last_index = char_index
               chunk[next_chunk_index+2] = "_npi_=_npi_+1"
               next_chunk_index = next_chunk_index + 3
-              $(force_write)
+              $(!force_write)
             else
               last_index = next_index
             end
@@ -496,13 +496,13 @@ local function prep(contents)
             last_index = next_index + 1 + parsed_long_string_flag
             parsed_long_string_flag = false
         end
-        $(use_goto and [[goto no_write
+        $(!use_goto and [[goto no_write
         ::force_write::]] or [[if force_write_flag then
           force_write_flag = false]])
 --          print("around line ", line_nr, " forced write of ", begin_index, " to ", char_index - 1, " at layer ", previous_layer)
           write[previous_layer](previous_chunk_index, begin_index, char_index - 1)
           begin_index = last_index
-        $(use_goto and "::no_write::" or "end")
+        $(!use_goto and "::no_write::" or "end")
       end
     end
   end
@@ -604,7 +604,7 @@ end
       local file, err_msg = io_open(path)
       if file then
         io_close(file)
-        return $(package_searcher)
+        return $(!package_searcher)
       end
     end
     fnf_table[2] = paths
@@ -614,8 +614,8 @@ end
 #else
 
   function searcher_function(modname)
-    local file, err_msg = package_searchpath(modname, prep_path)
-    return file and $(package_searcher)
+    local path, err_msg = package_searchpath(modname, prep_path)
+    return path and $(!package_searcher)
   end
   
 #end
@@ -632,7 +632,7 @@ return {
   prep_mod = prep_mod,
   prep_path = prep_path,
   --preps a file, executes the resulting function and caches and returns its result
-  prepquire = prepquire$(!package_searchers and [[,
+  prepquire = prepquire$(package_searchers and [[,
   searcher_function = searcher_function]])
   }
 --]===]
